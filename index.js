@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors')
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const res = require('express/lib/response');
 const ObjectId = require('mongodb').ObjectId;
 
 
@@ -23,6 +24,7 @@ async function run() {
         await client.connect();
         const userCollection = client.db('foodExpress').collection('user');
 
+        // Creat User
         app.get('/user', async (req, res) => {
             const query = {};
             const cursor = userCollection.find(query);
@@ -30,6 +32,7 @@ async function run() {
             res.send(users)
         });
         
+        // Insert User
         app.post('/user', async (req,  res) =>{
             const newUser = req.body;
             console.log('adding new user', newUser);
@@ -37,10 +40,36 @@ async function run() {
             res.send(result)
         });
 
-        app.delete('/user/:id', (req, res) => {
+        // Update User    
+        app.get('/user/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId()}
+            const query  = {_id: ObjectId(id)};
+            const result = await userCollection.findOne(query);
+            res.send(result);
         })
+
+        app.put('/user/:id', async (req, res) => {
+            const id = req.params.id;
+            const updatedUser = req.body;
+            const filter = { _id: ObjectId(id)};
+            const option = { upsert: true};
+            const updatedDoc = {
+                $set:{
+                    name: updatedUser.name,
+                    email: updatedUser.email
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, option)
+            res.send(result);
+        })     
+
+        // Delete User    
+        app.delete('/user/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)}
+            const result = await userCollection.deleteOne(query);
+            res.send(result)
+        });
 
 
 
